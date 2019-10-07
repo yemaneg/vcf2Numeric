@@ -1,0 +1,59 @@
+vcf2numeric <- function(vcf_file){
+  # requires vcfR package installed.
+  # for small vcf files: Do chromosome by chromosome
+  # converts vcf file to numeric file.
+  # The out put is a list which can be accessed by object name (obj$geno)
+  # Loci with any NA are removed from the analysis. This function is meant for imputed data
+  # The numeric genotypic will have genotypes as a row and loci as column
+  # The function can be used to convert vcf file to numeric format. I wrote it for  MakeDiploidFSTMat function in OUTFLank package.
+  # It is not tested for bugs
+  
+  require(vcfR)
+  #Import data
+  
+ 
+  print("File loading ... ") 
+  vcf<-read.vcfR(vcf_file, verbose = FALSE )]
+  
+  print("File Loaded")
+  
+  vcf<-vcf[grep("^GT",vcf@gt[,1]), ]
+
+  Print("GT checking completed")
+  
+  vcf@gt<-gsub(":.*","",vcf@gt)
+  print("0|1.. changed")
+  vcf@gt <- gsub("0[[:punct:]]0", 0 ,vcf@gt)
+  
+  
+  # Coding 0 1 2 (0|0 coded as 0 0|1 or 1|0 as 1 and 1|1 as 2
+  vcf@gt<-gsub("1[[:punct:]]1", 2,vcf@gt)
+  vcf@gt[(vcf@gt %in% "1|0")]<-1
+  vcf@gt[(vcf@gt %in% "0|1")]<-1
+  vcf@gt[vcf@gt %in% "1/0"] <- 1
+  vcf@gt[vcf@gt %in% "0/1"]<-1
+  vcf@gt <- gsub(".[[:punct:]].",NA, vcf@gt)
+  
+  # filter out Nas
+  
+  filter <- rep(NA,length(vcf@gt[,1]))
+  for(i in 1:length(vcf@gt[,1])){
+    
+    filter[i]<- !( NA%in% vcf@gt[i,]  )
+    
+  }
+  
+  #Nas remover R
+  
+  vcf<-vcf[filter]
+  
+  # convert to Matrix
+  vcf.mat<-apply(vcf@gt[,-1],2,as.numeric)
+  #accession names for the tables
+   colnames(vcf.mat)<-colnames(vcf@gt)[-1]
+   # SNP positions as row names
+   rownames(vcf.mat)<-vcf@fix[,2]
+   vcf.mat<-t(vcf.mat)
+  vcf.list<-list(snp_info=vcf@fix[,1:2],geno=vcf.mat)
+  return(vcf.list)
+}
