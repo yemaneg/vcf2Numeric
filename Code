@@ -19,10 +19,10 @@ vcf2numeric <- function(vcf_file){
   
   vcf<-vcf[grep("^GT",vcf@gt[,1]), ]
 
-  Print("GT checking completed")
+  writeLines("GT checking completed")
   
   vcf@gt<-gsub(":.*","",vcf@gt)
-  print("0|1.. changed")
+  writeLines("0|1.. changed")
   vcf@gt <- gsub("0[[:punct:]]0", 0 ,vcf@gt)
   
   
@@ -53,6 +53,7 @@ vcf2numeric <- function(vcf_file){
    colnames(vcf.mat)<-colnames(vcf@gt)[-1]
    # SNP positions as row names
    rownames(vcf.mat)<-vcf@fix[,2]
+   writeLines("Transposing ...")
    vcf.mat<-t(vcf.mat)
   vcf.list<-list(snp_info=vcf@fix[,1:2],geno=vcf.mat)
   return(vcf.list)
